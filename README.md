@@ -1,0 +1,1 @@
+# Fertilizer-disease-prediction
