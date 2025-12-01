@@ -4,8 +4,9 @@ import joblib
 import sys
 import warnings 
 
-# IMPORT THE NEW MODULE
+# IMPORT NEW MODULES
 from crop_engine import CropRecommender
+from visualizer import visualize_impact  # <--- NEW IMPORT
 
 # ==========================================
 # 0. SYSTEM SETUP
@@ -149,3 +150,6 @@ if __name__ == "__main__":
     print("\n🛡️   PREVENTION & CARE:")
     print(f"    {advice['prevent']}")
     print("\n" + "="*60)
+
+    # 5. VISUALIZATION (New Feature)
+    visualize_impact(user_input, recommended_fertilizer)
