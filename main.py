@@ -4,9 +4,16 @@ import joblib
 import sys
 import warnings 
 
-# IMPORT NEW MODULES
+# ==========================================
+# IMPORT LOCAL MODULES
+# ==========================================
+# Make sure you have created these 4 files in the same folder!
 from crop_engine import CropRecommender
-from visualizer import visualize_impact  # <--- NEW IMPORT
+from visualizer import visualize_impact
+from dosage_engine import DosageCalculator  # <--- New Feature 2
+from xai_engine import explain_prediction   # <--- New Feature 3
+from weather_engine import WeatherService   # <--- New Feature 4
+from ai_advisor import AIAdvisor            # <--- New Feature 5
 
 # ==========================================
 # 0. SYSTEM SETUP
@@ -24,32 +31,32 @@ from sklearn.pipeline import Pipeline
 DATA_PATH = "Crop_and_fertilizer_cleaned.csv"
 FERT_MODEL_PATH = "fertilizer_model.joblib"
 
-# FARMER GUIDE
+# STATIC FALLBACK GUIDE (Used if AI fails or for quick summary)
 FARMER_GUIDE = {
     'Urea': {
         'issue': 'Low Nitrogen (Yellow Leaves)',
-        'why': 'Heavy rains may have washed away nutrients, or the soil has been used too much without rest.',
-        'prevent': '1. Rotate crops with beans or legumes.\n   2. Add cow dung or compost before planting.'
+        'why': 'Heavy rains may have washed away nutrients.',
+        'prevent': 'Rotate crops with beans or legumes.'
     },
     'DAP': {
         'issue': 'Low Phosphorus (Weak Roots)',
-        'why': 'Soil is naturally low in minerals or acidic soil is locking up the nutrients.',
-        'prevent': '1. Use organic manure regularly.\n   2. Avoid over-watering which damages roots.'
+        'why': 'Soil is naturally low in minerals or acidic.',
+        'prevent': 'Use organic manure regularly.'
     },
     'MOP': {
         'issue': 'Low Potassium (Poor Growth)',
         'why': 'Sandy soil often loses potassium quickly.',
-        'prevent': '1. Add wood ash to the soil.\n   2. Use mulch to keep the soil moist and healthy.'
+        'prevent': 'Add wood ash to the soil.'
     },
     '19:19:19 NPK': {
         'issue': 'General Nutrient Balance Needed',
-        'why': 'The crop needs a boost of all major nutrients for better yield.',
-        'prevent': '1. Test soil regularly.\n   2. Maintain a balance of organic and chemical fertilizers.'
+        'why': 'The crop needs a boost of all major nutrients.',
+        'prevent': 'Test soil regularly.'
     },
     'General': {
         'issue': 'Multiple Nutrient Deficiencies',
-        'why': 'The soil needs a specific mix to support the chosen crop.',
-        'prevent': '1. Follow a strict crop rotation schedule.\n   2. Perform a lab soil test every 2 years.'
+        'why': 'The soil needs a specific mix.',
+        'prevent': 'Perform a lab soil test every 2 years.'
     }
 }
 
@@ -99,57 +106,106 @@ class FertilizerRecommender:
 # MAIN EXECUTION
 # ==========================================
 if __name__ == "__main__":
-    # 1. Initialize Engines
+    print("\n" + "="*60)
+    print(f"🚜  SMART FARMING SYSTEM INITIALIZING...")
+    print("="*60)
+
+    # 1. Initialize All Engines
     fert_engine = FertilizerRecommender()
     fert_engine.load_model()
     
     crop_engine = CropRecommender()
     crop_engine.load_model()
+    
+    # New Engines (Ensure files exist!)
+    try:
+        dosage_calc = DosageCalculator()
+        weather_bot = WeatherService()
+        ai_bot = AIAdvisor()
+    except NameError as e:
+        print(f"\n❌ CRITICAL ERROR: Missing Module. {e}")
+        print("   Please create dosage_engine.py, weather_engine.py, and ai_advisor.py")
+        sys.exit(1)
 
-    # 2. User Input
+    # 2. Context Gathering (Feature 4: Live Weather)
+    target_district = 'Kolhapur'
+    print(f"   [System] 📡 Fetching real-time data for {target_district}...")
+    
+    # We fetch rainfall/temp automatically. No need for manual input!
+    live_temp, live_rain, rain_warning = weather_bot.get_live_weather(target_district)
+    print(f"   [Weather] Temp: {live_temp}°C | Rain Estimate: {live_rain}mm")
+
+    # 3. Build User Input (Auto-injecting weather data)
     user_input = {
-        'District_Name': 'Kolhapur', 
+        'District_Name': target_district, 
         'Crop':          'Rice',     
         'Soil_color':    'Black',
         'Nitrogen':      20, 
         'Phosphorus':    50, 
         'Potassium':     50, 
         'pH':            6.5, 
-        'Rainfall':      500, 
-        'Temperature':   30
+        # LIVE DATA INJECTION (Automatically overrides manual input)
+        'Rainfall':      live_rain, 
+        'Temperature':   live_temp   
     }
 
-    # 3. Get Intelligence
+    # 4. Get Predictions
     is_suitable, best_crop = crop_engine.predict_suitability(user_input)
     recommended_fertilizer = fert_engine.get_recommendation(user_input)
+    
+    # Calculate Precision Dosage (Feature 2)
+    qty_per_acre, logic_msg = dosage_calc.calculate_dosage(
+        user_input['Crop'], user_input, recommended_fertilizer
+    )
+
+    # Get Static Guide (Fallback)
     advice = FARMER_GUIDE.get(recommended_fertilizer, FARMER_GUIDE['General'])
 
-    # 4. Generate Report
+    # 5. Generate Comprehensive Report
     print("\n" + "="*60)
-    print(f"🌾  FARM ADVISORY REPORT")
+    print(f"🌾  FARM ADVISORY REPORT (v2.0)")
     print("="*60)
 
-    # Suitability Section
+    # Weather Alert
+    if rain_warning:
+        print(f"\n🚨  CRITICAL WEATHER WARNING: {rain_warning}")
+        print("    (Application of fertilizer is NOT recommended today)")
+
+    # Section 1: Suitability
     user_crop = user_input['Crop']
-    print(f"\n🔍  CROP SUITABILITY CHECK: '{user_crop}'")
-    
+    print(f"\n1️⃣  CROP SUITABILITY: '{user_crop}'")
     if is_suitable:
-        print(f"    ✅ EXCELLENT CHOICE! '{user_crop}' is highly suitable for this soil.")
+        print(f"    ✅ EXCELLENT CHOICE! Soil conditions are perfect.")
     else:
-        print(f"    ⚠️  RISK ALERT: '{user_crop}' might struggle here.")
-        print(f"    🌟  BETTER OPTION: Consider growing '{best_crop}' instead.")
+        # --- CHANGED LINE BELOW ---
+        print(f"    🌟 RECOMMENDED CROP: Consider growing '{best_crop}' for better yield.")
 
-    # Fertilizer Section
+    # Section 2: Fertilizer Plan
     print("-" * 60)
-    print(f"💊  RECOMMENDED FERTILIZER:  {recommended_fertilizer}")
-    print(f"📋  DIAGNOSIS:               {advice['issue']}")
-    
-    print("\n🤔  WHY THIS HAPPENED?")
-    print(f"    {advice['why']}")
-    
-    print("\n🛡️   PREVENTION & CARE:")
-    print(f"    {advice['prevent']}")
-    print("\n" + "="*60)
+    print(f"2️⃣  NUTRIENT MANAGEMENT")
+    print(f"    💊 Recommended:     {recommended_fertilizer}")
+    print(f"    ⚖️  Dosage:          {qty_per_acre} kg / acre")
+    print(f"    📝  Calculation:     {logic_msg}")
+    print(f"    🩺  Diagnosis:       {advice['issue']}")
 
-    # 5. VISUALIZATION (New Feature)
+    # Section 3: AI Consultation (Feature 5)
+    print("-" * 60)
+    print(f"3️⃣  AI CONSULTANT (GenAI)")
+    ai_advice = ai_bot.get_custom_advice(user_input, recommended_fertilizer, user_crop)
+    print(ai_advice)
+
+    # 6. Visualizations (Feature 3: XAI & Impact)
+    print("\n" + "="*60)
+    
+    # Visual 1: Before vs After Bar Chart
     visualize_impact(user_input, recommended_fertilizer)
+    
+    # Visual 2: Why did the AI choose this? (SHAP)
+    # Convert input to DataFrame for SHAP
+    input_df = pd.DataFrame([user_input])
+    if 'Soil_color' in input_df.columns: 
+        input_df['Soil_color'] = input_df['Soil_color'].str.strip()
+    
+    explain_prediction(fert_engine.pipeline, input_df)
+    
+    print("\n✅ System Finished.")
