@@ -1,0 +1,90 @@
+Rows: 4513, Columns: 10
+
+Columns:
+District_Name, Soil_color, Nitrogen, Phosphorus, Potassium, pH, Rainfall, Temperature, Crop, Fertilizer
+
+Dtypes:
+District_Name     object
+Soil_color        object
+Nitrogen           int64
+Phosphorus         int64
+Potassium          int64
+pH               float64
+Rainfall           int64
+Temperature        int64
+Crop              object
+Fertilizer        object
+
+Missing values (per column):
+District_Name    0
+Soil_color       0
+Nitrogen         0
+Phosphorus       0
+Potassium        0
+pH               0
+Rainfall         0
+Temperature      0
+Crop             0
+Fertilizer       0
+
+Sample rows:
+District_Name Soil_color  Nitrogen  Phosphorus  Potassium  pH  Rainfall  Temperature      Crop Fertilizer
+     Kolhapur      Black        75          50        100 6.5      1000           20 Sugarcane       Urea
+     Kolhapur      Black        80          50        100 6.5      1000           20 Sugarcane       Urea
+     Kolhapur      Black        85          50        100 6.5      1000           20 Sugarcane       Urea
+     Kolhapur      Black        90          50        100 6.5      1000           20 Sugarcane       Urea
+     Kolhapur      Black        95          50        100 6.5      1000           20 Sugarcane       Urea
+
+Numeric summary (describe):
+              count        mean         std    min    25%    50%     75%     max
+Nitrogen     4513.0   95.409927   38.060648   20.0   60.0  105.0   125.0   150.0
+Phosphorus   4513.0   54.341901   16.551991   10.0   40.0   55.0    65.0    90.0
+Potassium    4513.0   63.595170   35.691911    5.0   40.0   55.0    75.0   150.0
+pH           4513.0    6.715267    0.625198    5.5    6.0    6.5     7.0     8.5
+Rainfall     4513.0  819.189010  251.730813  300.0  600.0  800.0  1000.0  1700.0
+Temperature  4513.0   25.915134    5.897328   10.0   20.0   25.0    30.0    40.0
+
+Categorical columns summary:
+
+Column 'District_Name': unique=5
+District_Name
+Kolhapur    1430
+Satara      1000
+Sangli       897
+Solapur      707
+Pune         479
+
+Column 'Soil_color': unique=6
+Soil_color
+Black            2260
+Red              1224
+Dark Brown        659
+Reddish Brown     265
+Light Brown        54
+Medium Brown       51
+
+Column 'Crop': unique=16
+Crop
+Sugarcane    1010
+Wheat         859
+Cotton        650
+Jowar         394
+Maize         350
+Rice          309
+Groundnut     177
+Tur           126
+Grapes        125
+Ginger        125
+
+Column 'Fertilizer': unique=19
+Fertilizer
+Urea                      1364
+DAP                        667
+MOP                        571
+19:19:19 NPK               480
+SSP                        417
+Magnesium Sulphate         215
+10:26:26 NPK               156
+50:26:26 NPK               124
+Chilated Micronutrient     108
+12:32:16 NPK               106
