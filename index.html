@@ -58,7 +58,6 @@
             flex-direction: column; 
             overflow: hidden;
             position: relative;
-            /* Adjusted height since terminal is gone */
             min-height: 600px; 
         }
 
@@ -141,7 +140,7 @@
             align-items: center;
             text-align: center;
             overflow-y: auto;
-            max-height: 80vh; /* Allow scrolling if content is long */
+            max-height: 80vh; /* Allow scrolling */
         }
 
         .placeholder-content { opacity: 0.6; margin-top: 100px; }
@@ -176,11 +175,12 @@
         .ai-text { font-size: 0.85rem; white-space: pre-wrap; line-height: 1.4; color: var(--text-dark);}
 
         /* Image Result */
-        #impact-img {
+        .graph-img {
             width: 100%;
             border-radius: 8px;
             margin-top: 10px;
             border: 1px solid var(--glass-border);
+            background: white; /* Ensure graph background is clean */
         }
 
         .loader { display: none; border: 4px solid var(--glass-border); border-top: 4px solid var(--accent); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto;}
@@ -311,10 +311,17 @@
                     </div>
                 </div>
 
-                <!-- Visualization -->
+                <!-- Visualization 1: Impact -->
                 <div class="card">
                     <h3>Impact Analysis</h3>
-                    <img id="impact-img" src="" alt="Impact Analysis Graph" />
+                    <img id="impact-img" class="graph-img" src="" alt="Impact Analysis Graph" />
+                </div>
+
+                <!-- Visualization 2: SHAP -->
+                <div class="card" id="shap-card" style="border-left-color: #3b82f6;">
+                    <h3>Why this Decision? (XAI)</h3>
+                    <img id="shap-img" class="graph-img" src="" alt="SHAP Explanation Graph" />
+                    <p style="font-size:0.75rem; color:var(--text-light); margin-top:5px;">This chart shows which factors (like Rainfall or N-P-K) pushed the model to this recommendation.</p>
                 </div>
                 
                 <!-- AI Card (On Demand) -->
@@ -435,9 +442,15 @@
             document.getElementById('fert-logic').innerText = data.fertilizer.logic;
             document.getElementById('fert-diagnosis').innerText = data.fertilizer.diagnosis;
 
-            // 4. Image
+            // 4. Images (Impact & SHAP)
             if(data.impact_image) {
                 document.getElementById('impact-img').src = "data:image/png;base64," + data.impact_image;
+            }
+            if(data.shap_image) {
+                document.getElementById('shap-img').src = "data:image/png;base64," + data.shap_image;
+                document.getElementById('shap-card').style.display = "block";
+            } else {
+                document.getElementById('shap-card').style.display = "none";
             }
 
             document.getElementById('loader').style.display = 'none';

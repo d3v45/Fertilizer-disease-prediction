@@ -5,10 +5,10 @@ import warnings
 import sys
 import io
 import base64
+import os
 from contextlib import redirect_stdout
 
 # Import ALL your existing modules
-# Make sure these files are in the same folder as app.py
 from crop_engine import CropRecommender
 from dosage_engine import DosageCalculator
 from weather_engine import WeatherService
@@ -30,7 +30,7 @@ dosage_calc = DosageCalculator()
 weather_bot = WeatherService()
 ai_bot = AIAdvisor() 
 
-# DATA: Static Fallback Guide (Copied from main.py)
+# DATA: Static Fallback Guide
 FARMER_GUIDE = {
     'Urea': {
         'issue': 'Low Nitrogen (Yellow Leaves)',
@@ -72,6 +72,7 @@ def predict():
     
     # Variables to hold return data
     image_base64 = None
+    shap_base64 = None # New variable for SHAP image
     diagnosis = "General Assessment"
 
     try:
@@ -111,32 +112,40 @@ def predict():
             guide = FARMER_GUIDE.get(recommended_fertilizer, FARMER_GUIDE['General'])
             diagnosis = guide['issue']
 
-            # 4. Visualizations
+            # 4. Visualizations (Impact Analysis)
             visualize_impact(user_input, recommended_fertilizer)
             
-            # Encode Image to Base64 to send to UI
+            # Encode Impact Image
             try:
                 with open("impact_analysis.png", "rb") as img_file:
                     image_base64 = base64.b64encode(img_file.read()).decode('utf-8')
             except Exception as e:
-                print(f"   [Error] Image encoding failed: {e}")
+                print(f"   [Error] Impact image encoding failed: {e}")
 
-            # Prepare data for SHAP (Backround process)
+            # 5. XAI Analysis (SHAP)
             input_df = pd.DataFrame([user_input])
             if 'Soil_color' in input_df.columns: 
                 input_df['Soil_color'] = input_df['Soil_color'].str.strip()
+            
+            # This generates 'explanation_shap.png'
             explain_prediction(fert_engine.pipeline, input_df)
+
+            # Encode SHAP Image
+            try:
+                if os.path.exists("explanation_shap.png"):
+                    with open("explanation_shap.png", "rb") as shap_file:
+                        shap_base64 = base64.b64encode(shap_file.read()).decode('utf-8')
+            except Exception as e:
+                print(f"   [Error] SHAP image encoding failed: {e}")
 
             print("[System] Analysis Complete.")
 
     except Exception as e:
         print(f"[Error] {e}")
-        # traceback helps see where the error is in the console
         import traceback
         traceback.print_exc()
 
     terminal_logs = capture_buffer.getvalue()
-    # Print logs to the real terminal so you can see them too
     sys.__stdout__.write(terminal_logs)
     
     return jsonify({
@@ -149,6 +158,7 @@ def predict():
             'diagnosis': diagnosis
         },
         'impact_image': image_base64,
+        'shap_image': shap_base64, # Sending SHAP image to UI
         'logs': terminal_logs
     })
 
@@ -156,7 +166,6 @@ def predict():
 @app.route('/ask_ai', methods=['POST'])
 def ask_ai():
     data = request.json
-    # Reconstruct input for AI
     user_input = {
         'District_Name': data['District_Name'],
         'Nitrogen': float(data['Nitrogen']),
