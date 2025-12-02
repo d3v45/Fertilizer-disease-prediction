@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoFarm AI | Smart Advisory</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Fira+Code:wght@400&display=swap" rel="stylesheet">
+    <style>
+        /* --- GLOBAL VARIABLES (Light Mode Default) --- */
+        :root {
+            --bg-gradient: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --text-dark: #1f2937;
+            --text-light: #6b7280;
+            --accent: #10b981;
+            --accent-hover: #059669;
+            --card-bg: white;
+        }
+
+        /* --- DARK MODE VARIABLES --- */
+        body.dark-mode {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            --glass-bg: rgba(30, 41, 59, 0.9);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-dark: #f1f5f9;
+            --text-light: #94a3b8;
+            --accent: #34d399;
+            --accent-hover: #10b981;
+            --card-bg: #334155;
+        }
+
+        /* --- RESET & BODY --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; transition: background 0.3s, color 0.3s; }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: var(--text-dark);
+        }
+
+        /* --- GLASS CONTAINER --- */
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column; 
+            overflow: hidden;
+            position: relative;
+            /* Adjusted height since terminal is gone */
+            min-height: 600px; 
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            flex: 1;
+        }
+        @media(min-width: 768px) {
+            .main-content { flex-direction: row; }
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.1);
+            border: none;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            z-index: 10;
+        }
+        body.dark-mode .theme-toggle { background: rgba(255,255,255,0.1); }
+
+        /* --- LEFT PANEL: FORM --- */
+        .form-panel { padding: 40px; flex: 1; border-right: 1px solid var(--glass-border); overflow-y: auto;}
+
+        h1 { font-size: 1.8rem; margin-bottom: 5px; }
+        p.subtitle { color: var(--text-light); font-size: 0.9rem; margin-bottom: 30px; }
+
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; }
+        
+        input, select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--glass-border);
+            background: var(--card-bg);
+            color: var(--text-dark);
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 0.95rem;
+        }
+        input:focus, select:focus { outline: none; border-color: var(--accent); }
+
+        .row { display: flex; gap: 15px; }
+        .row > div { flex: 1; }
+
+        button.btn-primary {
+            width: 100%;
+            padding: 15px;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button.btn-primary:hover { background: var(--accent-hover); }
+
+        button.btn-ai {
+            background: #8b5cf6;
+            margin-top: 0;
+            font-size: 0.9rem;
+            padding: 10px;
+        }
+        button.btn-ai:hover { background: #7c3aed; }
+
+        /* --- RIGHT PANEL: RESULTS --- */
+        .result-panel {
+            flex: 1;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start; /* Align top */
+            align-items: center;
+            text-align: center;
+            overflow-y: auto;
+            max-height: 80vh; /* Allow scrolling if content is long */
+        }
+
+        .placeholder-content { opacity: 0.6; margin-top: 100px; }
+        .placeholder-content svg { stroke: var(--text-light); }
+
+        .card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            text-align: left;
+            border-left: 5px solid var(--accent);
+            width: 100%;
+        }
+        .card h3 { font-size: 0.8rem; color: var(--text-light); text-transform: uppercase; margin-bottom: 10px; display: flex; justify-content: space-between;}
+        .data-point { font-size: 1.3rem; font-weight: 700; color: var(--text-dark); }
+        .data-sub { font-size: 0.85rem; color: var(--text-light); }
+
+        /* Detailed Results Styling */
+        .detail-row {
+            display: flex;
+            margin-bottom: 8px;
+            align-items: baseline;
+            font-size: 0.9rem;
+        }
+        .detail-icon { margin-right: 10px; width: 20px; }
+        .detail-label { font-weight: 600; margin-right: 5px; color: var(--text-dark); }
+        .detail-val { color: var(--text-light); }
+
+        .ai-card { border-left-color: #8b5cf6; }
+        .ai-text { font-size: 0.85rem; white-space: pre-wrap; line-height: 1.4; color: var(--text-dark);}
+
+        /* Image Result */
+        #impact-img {
+            width: 100%;
+            border-radius: 8px;
+            margin-top: 10px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .loader { display: none; border: 4px solid var(--glass-border); border-top: 4px solid var(--accent); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto;}
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .hidden { display: none; }
+        
+        @media(max-width: 768px) {
+            .form-panel { border-right: none; border-bottom: 1px solid var(--glass-border); }
+        }
+    </style>
+</head>
+<body class="">
+
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark Mode">
+        <span id="theme-icon">🌙</span>
+    </button>
+
+<div class="container">
+    <div class="main-content">
+        <!-- LEFT: FORM -->
+        <div class="form-panel">
+            <h1>EcoFarm AI</h1>
+            <p class="subtitle">Smart Soil & Crop Advisory System</p>
+
+            <form id="farmForm">
+                <div class="row">
+                    <div class="form-group">
+                        <label>District</label>
+                        <select id="District_Name">
+                            <option value="Kolhapur">Kolhapur</option>
+                            <option value="Pune">Pune</option>
+                            <option value="Satara">Satara</option>
+                            <option value="Sangli">Sangli</option>
+                            <option value="Solapur">Solapur</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Target Crop</label>
+                        <select id="Crop">
+                            <option value="Rice">Rice</option>
+                            <option value="Wheat">Wheat</option>
+                            <option value="Sugarcane">Sugarcane</option>
+                            <option value="Cotton">Cotton</option>
+                            <option value="Maize">Maize</option>
+                            <option value="Jowar">Jowar</option>
+                            <option value="Groundnut">Groundnut</option>
+                            <option value="Tur">Tur</option>
+                            <option value="Grapes">Grapes</option>
+                            <option value="Ginger">Ginger</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Soil Color</label>
+                    <select id="Soil_color">
+                        <option value="Black">Black</option>
+                        <option value="Red">Red</option>
+                        <option value="Medium Brown">Medium Brown</option>
+                        <option value="Dark Brown">Dark Brown</option>
+                        <option value="Reddish Brown">Reddish Brown</option>
+                        <option value="Light Brown">Light Brown</option>
+                    </select>
+                </div>
+                <div class="row">
+                    <div class="form-group"><label>Nitrogen</label><input type="number" id="Nitrogen" value="50"></div>
+                    <div class="form-group"><label>Phosphorus</label><input type="number" id="Phosphorus" value="40"></div>
+                </div>
+                <div class="row">
+                    <div class="form-group"><label>Potassium</label><input type="number" id="Potassium" value="40"></div>
+                    <div class="form-group"><label>pH</label><input type="number" id="pH" value="6.5" step="0.1"></div>
+                </div>
+                <button type="submit" class="btn-primary">Generate Report</button>
+            </form>
+        </div>
+
+        <!-- RIGHT: RESULTS -->
+        <div class="result-panel">
+            <div class="placeholder-content" id="placeholder">
+                <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path><path d="M22 19l-3 3-3-3"></path>
+                </svg>
+                <p>System Ready</p>
+            </div>
+            
+            <div class="loader" id="loader"></div>
+
+            <div id="results" class="hidden">
+                <!-- Weather -->
+                <div class="card">
+                    <h3>Weather Condition</h3>
+                    <div class="detail-row"><span class="detail-label">Temp:</span> <span id="w-temp" class="detail-val">--</span>°C</div>
+                    <div class="detail-row"><span class="detail-label">Rain:</span> <span id="w-rain" class="detail-val">--</span></div>
+                </div>
+
+                <!-- Crop Verdict -->
+                <div class="card" id="crop-card">
+                    <h3>Crop Verdict</h3>
+                    <div class="data-point" id="crop-verdict">--</div>
+                    <div class="data-sub" id="crop-sub">--</div>
+                </div>
+
+                <!-- Fertilizer Plan (Detailed) -->
+                <div class="card">
+                    <h3>Nutrient Management</h3>
+                    
+                    <div class="detail-row">
+                        <span class="detail-icon">💊</span>
+                        <span class="detail-label">Recommended:</span>
+                        <span class="detail-val" id="fert-name">--</span>
+                    </div>
+
+                    <div class="detail-row">
+                        <span class="detail-icon">⚖️</span>
+                        <span class="detail-label">Dosage:</span>
+                        <span class="detail-val"><span id="fert-dose">--</span> kg/acre</span>
+                    </div>
+
+                    <div class="detail-row">
+                        <span class="detail-icon">📝</span>
+                        <span class="detail-label">Calculation:</span>
+                        <span class="detail-val" id="fert-logic" style="font-size:0.8rem">--</span>
+                    </div>
+
+                    <div class="detail-row">
+                        <span class="detail-icon">🩺</span>
+                        <span class="detail-label">Diagnosis:</span>
+                        <span class="detail-val" id="fert-diagnosis" style="color:var(--accent); font-weight:600;">--</span>
+                    </div>
+                </div>
+
+                <!-- Visualization -->
+                <div class="card">
+                    <h3>Impact Analysis</h3>
+                    <img id="impact-img" src="" alt="Impact Analysis Graph" />
+                </div>
+                
+                <!-- AI Card (On Demand) -->
+                <div class="card ai-card">
+                    <h3>🤖 AI Consultant</h3>
+                    <div id="ai-section">
+                        <p style="font-size:0.85rem; margin-bottom:10px; color:var(--text-light)">Get detailed advice on why this fertilizer was chosen.</p>
+                        <button class="btn-primary btn-ai" onclick="askAI()">✨ Ask AI Consultant</button>
+                    </div>
+                    <div class="ai-text hidden" id="ai-response"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Store last form data for AI request
+    let lastFormData = null;
+    let lastFertilizer = null;
+
+    // Theme Logic
+    function toggleTheme() {
+        document.body.classList.toggle('dark-mode');
+        const icon = document.getElementById('theme-icon');
+        icon.innerText = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+    }
+
+    // AI Button Logic
+    async function askAI() {
+        const btn = document.querySelector('.btn-ai');
+        const aiDiv = document.getElementById('ai-response');
+        
+        btn.innerText = "Thinking...";
+        btn.disabled = true;
+
+        try {
+            const payload = { ...lastFormData, Fertilizer: lastFertilizer };
+            const response = await fetch('/ask_ai', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            
+            // Show result
+            document.getElementById('ai-section').style.display = 'none'; // Hide button
+            aiDiv.innerText = data.advice;
+            aiDiv.classList.remove('hidden');
+
+        } catch (e) {
+            btn.innerText = "Error. Try Again.";
+            btn.disabled = false;
+            console.error(e);
+        }
+    }
+
+    // Form Logic
+    document.getElementById('farmForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // UI Reset
+        document.getElementById('placeholder').style.display = 'none';
+        document.getElementById('results').classList.add('hidden');
+        document.getElementById('loader').style.display = 'block';
+        
+        // Reset AI Section
+        document.getElementById('ai-section').style.display = 'block';
+        document.querySelector('.btn-ai').innerText = "✨ Ask AI Consultant";
+        document.querySelector('.btn-ai').disabled = false;
+        document.getElementById('ai-response').innerText = '';
+        document.getElementById('ai-response').classList.add('hidden');
+
+        // Collect Data
+        lastFormData = {
+            District_Name: document.getElementById('District_Name').value,
+            Crop: document.getElementById('Crop').value,
+            Soil_color: document.getElementById('Soil_color').value,
+            Nitrogen: document.getElementById('Nitrogen').value,
+            Phosphorus: document.getElementById('Phosphorus').value,
+            Potassium: document.getElementById('Potassium').value,
+            pH: document.getElementById('pH').value
+        };
+
+        try {
+            const response = await fetch('/predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(lastFormData)
+            });
+            const data = await response.json();
+
+            // Store for AI use later
+            lastFertilizer = data.fertilizer.name;
+
+            // 1. Weather
+            document.getElementById('w-temp').innerText = data.weather.temp;
+            document.getElementById('w-rain').innerText = data.weather.rain + "mm";
+            
+            // 2. Crop
+            const cropCard = document.getElementById('crop-card');
+            const cropVerdict = document.getElementById('crop-verdict');
+            if (data.suitability.is_suitable) {
+                cropVerdict.innerText = "Excellent Choice";
+                cropVerdict.style.color = "var(--accent)";
+                document.getElementById('crop-sub').innerText = "Perfect for this soil.";
+                cropCard.style.borderLeftColor = "var(--accent)";
+            } else {
+                cropVerdict.innerText = "Try: " + data.suitability.best_crop;
+                cropVerdict.style.color = "#fbbf24"; 
+                document.getElementById('crop-sub').innerText = "Better yield expected.";
+                cropCard.style.borderLeftColor = "#fbbf24";
+            }
+
+            // 3. Fertilizer Detailed
+            document.getElementById('fert-name').innerText = data.fertilizer.name;
+            document.getElementById('fert-dose').innerText = data.fertilizer.dosage;
+            document.getElementById('fert-logic').innerText = data.fertilizer.logic;
+            document.getElementById('fert-diagnosis').innerText = data.fertilizer.diagnosis;
+
+            // 4. Image
+            if(data.impact_image) {
+                document.getElementById('impact-img').src = "data:image/png;base64," + data.impact_image;
+            }
+
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('results').classList.remove('hidden');
+
+        } catch (error) {
+            console.error(error);
+            alert("Error connecting to server. Check your terminal for details.");
+            document.getElementById('loader').style.display = 'none';
+        }
+    });
+</script>
+
+</body>
+</html>
